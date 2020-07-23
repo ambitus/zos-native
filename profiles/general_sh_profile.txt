@@ -1,0 +1,55 @@
+# A sample common profile for z/OS Unix System Services users.
+#
+# Author: Joe Bostian
+#
+# Copyright Contributors to the Ambitus Project.
+# SPDX-License-Identifier: Apache-2.0
+
+# Respect file tags for ASCII/EBCDIC stuff.  Need this for Python too.
+export _BPXK_AUTOCVT='ON'
+export _CEE_RUNOPTS='FILETAG(AUTOCVT,AUTOTAG) POSIX(ON)'
+
+# Set up for IBM Python.
+PYINST=/usr/lpp/IBM
+PYVER=v3r8
+# This needs to go at the front of PATH and LIBPATH if you want to use IBM Python with
+# Anaconda environments.
+export PATH=$PYINST/cyp/$PYVER/pyz/bin:$PATH
+export LIBPATH=$PYINST/cyp/$PYVER/pyz//lib:$LIBPATH
+# Set the python-specific file tagging environment variables.
+export _TAG_REDIR_ERR=txt
+export _TAG_REDIR_IN=txt
+export _TAG_REDIR_OUT=txt
+
+# Set up for Java.
+export JAVA_HOME=/usr/lpp/java/J8.0_64
+export PATH=$JAVA_HOME/bin:$PATH
+export LIBPATH=$LIBPATH:/usr/lib/java_runtime64
+# export IBM_JAVA_OPTIONS="-Dfile.encoding=ISO8859-1"
+
+# By default, the TERM variable is not set, so simple things like clear won't
+# work.  Set to a basic terminal type to enable this.
+export TERM=xterm
+# Sometimes Anaconda sets it's own TERMINFO, and can interfere with terminal operation.
+export TERMINFO=/usr/share/lib/terminfo
+
+#
+# Convenience variables and aliases
+#
+# I18N - make iconv easier to use.  Valid character sets should be in
+# /usr/lib/nls/charmap.
+export A2E='-f ISO8859-1 -t IBM-1047'
+export E2A='-f IBM-1047 -t ISO8859-1'
+export U2E='-f UTF-8 -t IBM-1047'
+export E2U='-f IBM-1047 -t UTF-8'
+
+# Personalization and Convenience
+alias whereis=type
+alias clear=/bin/clear
+
+# I like this prompt better ...
+export PS1='$PWD> '
+# export PS1='$(uname -n) $PWD> '
+
+# Add my tools to path
+export PATH=$PATH:$HOME/bin
