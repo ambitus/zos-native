@@ -3,7 +3,7 @@ Resources for using and porting code to the Unix environment of z/OS
 
 ## Introduction
 z/OS has had a POSIX-compliant Unix environment called Unix System Services (USS)
-since 1998. It contains the same basic infrastructure common to Unix platforms, like
+since 1998. It contains the same basic infrastructure as other Unix platforms, like
 a common runtime library, a tree-based file system (zfs), a shell, some key languages -
 like C, Java, and Python, and an assortment of common Unix commands.
 
@@ -26,3 +26,10 @@ some key definition and configuration steps:
 - [Defining USS users](./user_definition_setup.md)
 - [Allocating and mounting filesystems](./filesystem_setup.md)
 - [Setting up a build environment](./build_setup.md)
+
+# Development and Operations Examples
+It's important to understand the mix of open and proprietary interfaces on z/OS,
+and what that means for application development and deployment.  Here are some
+examples that illustrate the basic devOPs environment on z/OS.
+
+- [Python to C](./examples/py2C/python_to_c.md)
