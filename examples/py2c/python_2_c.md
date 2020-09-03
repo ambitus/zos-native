@@ -18,8 +18,8 @@ for estimating Pi.  It's a simple algorithm that we'll implement in C:
 
 - ```pi/4 = 1 - 1/3 + 1/5 - 1/7 + 1/9 - ...```
 
-The Python portion of this application will pass in an integer specifying the number
-of stable digits of required, and a float that the C routine will use to pass back
+The Python portion of this application will pass in an ```int``` specifying the number
+of stable digits of required, the C routine will pass back a ```double``` value for
 the result.  The C routine will be built into a shared library (dll).
 
 ## What's the Same, and What's Different?
@@ -28,13 +28,23 @@ z/OS exists today.  The compilers, interpreters, and runtime libraries are gener
 present.  The most apparent differences between the development environments of
 Linux and z/OS is in how they operate.
 
-An example that is relevant here is the C compiler.  Linux applications generally
+A relevant example of a difference is the C compiler.  Linux applications generally
 are built with the _gcc_ or _clang_ compilers, and use the _glibc/LLVM_ libraries.
 z/OS has the **XL C** compiler, and **Language Environment (LE)** runtime, and
 understanding how the Linux-based CLIs map to the XL C command line interface is
-a substantial challenge. While the source code for C applications generally does
+a significant challenge. While the source code for C applications generally does
 not have to change when it's brought to z/OS, the makefiles and other build recipes
 often need re-engineering.
+
+Another important difference is the default addressing mode of z/OS vs most Linux
+environments.  There is a large body of 31-bit code that runs on z/OS, and this is
+the addressing mode you get by default.  Python is built as a 64-bit application,
+so you need to explicitly specify 64-bit mode.  If your code isn't interfacing with
+a z/OS callable service, this is probably something you don't have to think about.
+
+The z/OS LE runtime environment supports two different kinds of call linkage -
+OS Linkage (OSLINK), and eXtra Performance linkage (XPLINK).  OSLINK is the legacy
+linkage mechanism
 
 In this project we'll use a simple makefile that captures all of the compile and
 link arguments for each platform.  This is where the differences and similarities

@@ -32,4 +32,4 @@ It's important to understand the mix of open and proprietary interfaces on z/OS,
 and what that means for application development and deployment.  Here are some
 examples that illustrate the basic devOPs environment on z/OS.
 
-- [Python to C](./examples/py2C/python_to_c.md)
+- [Python to C](./examples/py2c/python_to_c.md)
