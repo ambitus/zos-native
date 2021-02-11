@@ -20,7 +20,6 @@ Usage : python pb_endian_convert_utility.py -i <protobuf> -o <outfile>
 
 import tensorflow as tf
 import numpy as np
-import tensorflow_core.core.protobuf.saved_model_pb2
 from argparse import ArgumentParser
 import logging
 import shutil
@@ -41,12 +40,12 @@ def convert_endian(pb_file_name, output_file_name):
     with open(pb_file_name, "rb") as f:
         binary_data = f.read()
 
-    saved_model_proto = tensorflow_core.core.protobuf.saved_model_pb2.SavedModel.FromString(binary_data)
+    saved_model_proto = saved_model_pb2.SavedModel.FromString(binary_data)
 
+    tc_count = 0
     for m in range(len(saved_model_proto.meta_graphs)):
         meta_graph_proto = saved_model_proto.meta_graphs[m]
         graph_def_proto = meta_graph_proto.graph_def
-        tc_count = 0
         for f in graph_def_proto.library.function:
             logging.debug(f.signature.name)
             for n in f.node_def:
@@ -73,15 +72,24 @@ def convert_endian(pb_file_name, output_file_name):
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Protobuf Endian Convert Utility")
-    parser.add_argument("-i", dest="pb_file_name", required=True,
+    parser.add_argument("-i", "--input", dest="pb_file_name", required=True,
                             help="Input protobuf file including path", metavar="FILE")
-    #parser.add_argument("-o", dest="rewritten_file_name", required=True,
-    parser.add_argument("-o", dest="rewritten_file_name", default="rewritten_saved_model.pb",
+    parser.add_argument("-o", "--output", dest="rewritten_file_name", default="rewritten_saved_model.pb",
                             help="Output protobuf file including path", metavar="FILE")
     parser.add_argument("-v", "--verbose", help="increase output verbosity",
                             action="store_true")
     args = parser.parse_args()
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG)
+
+    vers = [int(x) for x in tf.__version__.split('.')]
+    if vers[0] < 2:
+        logging.debug(f"Tensorflow 2.x is needed for this tool!!!")
+        exit(1)
+    if vers[1] < 2:
+        from tensorflow_core.core.protobuf import saved_model_pb2
+    else:
+        from tensorflow.core.protobuf import saved_model_pb2
+
     convert_endian(args.pb_file_name, args.rewritten_file_name)
 
