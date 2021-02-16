@@ -5,5 +5,5 @@ This utility converts (byte-swaps) "tensor_content" field of the protobuf from L
 Usage : python pb_endian_convert_utility.py -i <protobuf> {-o <outfile> -v} \
 	- -i or --input <protobuf> : Input Protobuf file to be converted. \
 	- -o or --output <outfile> : Optional output converted protobuf file. If not specified, creates a file named rewritten_saved_model.pb in the CWD. \
-	- -v or --verbose: Verbose mode
+	- -v or --verbose: Verbose mode.
 
