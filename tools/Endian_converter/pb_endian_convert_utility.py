@@ -15,26 +15,53 @@
 # ==============================================================================
 """
 This utility converts (byte-swaps) "tensor_content" field of the protobuf from LE to BE and vice versa.
-Usage : python pb_endian_convert_utility.py -i <protobuf> -o <outfile> 
+Usage : python pb_endian_convert_utility.py -i <protobuf> -o <outfile>
 """
 
 import tensorflow as tf
-import numpy as np
+from tensorflow.core.framework.node_def_pb2 import NodeDef
+from tensorflow.python.framework import tensor_util
+from collections.abc import Iterable
 from argparse import ArgumentParser
 import logging
 import shutil
 
-def swap_bytes(tensor_content, dtype, num_items):
-    #byteswap not needed for int8 and uint8 data types, but letting numpy to handle that.
-    dtypes = {1:'float32', 2:'float64', 3:'int32', 4:'uint8', 5:'int16', 6:'int8', 9:'int64'}
-    val = np.frombuffer(tensor_content, dtype=dtypes.get(dtype))
-    logging.debug(f"       Before: {tensor_content} => {val}")
-    buffer_to_arr = np.ndarray(shape=(num_items,), dtype=dtypes.get(dtype), buffer=tensor_content)
-    swapped_arr = buffer_to_arr.byteswap()
-    swapped_tensor_content = swapped_arr.tobytes()
-    new_val = np.frombuffer(swapped_tensor_content, dtype=dtypes.get(dtype))
-    logging.debug(f"       After: {swapped_tensor_content} => {new_val}")
-    return swapped_tensor_content
+def walk_single_proto(proto,i):
+    tc = 0
+    if isinstance(proto,NodeDef):
+        logging.debug(f"   {proto.name}")
+        for attr_name in proto.attr:
+            attr_value = proto.attr[attr_name]
+            if attr_value.HasField("tensor"):
+                tensor_value = attr_value.tensor
+                if len(tensor_value.tensor_content) > 0:
+                    ndarr = tensor_util.MakeNdarray(tensor_value)
+                    logging.debug(f"       Before: {tensor_value} => {ndarr}")
+                    ndarr.byteswap(inplace=True)
+                    swapped_proto = tensor_util.make_tensor_proto(ndarr)
+                    tensor_value.CopyFrom(swapped_proto)
+                    logging.debug(f"       After: {tensor_value} => {ndarr}")
+                    tc+=1
+
+    elif hasattr(proto, "DESCRIPTOR"):
+        for f in proto.DESCRIPTOR.fields:
+            if f.name != "type_spec_value":
+                sub = getattr(proto,f.name)
+
+                tc+=walk_proto(sub,i+1)
+    return tc
+
+def walk_proto(proto,i=0):
+    if isinstance(proto, str):
+        return 0
+    elif isinstance(proto, Iterable):
+        tc=0
+        for p in proto:
+            tc+= walk_single_proto(p,i)
+        return tc
+    else:
+        return walk_single_proto(proto,i)
+
 
 def convert_endian(pb_file_name, output_file_name):
     with open(pb_file_name, "rb") as f:
@@ -42,24 +69,7 @@ def convert_endian(pb_file_name, output_file_name):
 
     saved_model_proto = saved_model_pb2.SavedModel.FromString(binary_data)
 
-    tc_count = 0
-    for m in range(len(saved_model_proto.meta_graphs)):
-        meta_graph_proto = saved_model_proto.meta_graphs[m]
-        graph_def_proto = meta_graph_proto.graph_def
-        for f in graph_def_proto.library.function:
-            logging.debug(f.signature.name)
-            for n in f.node_def:
-                logging.debug(f"   {n.name}")
-                for attr_name in n.attr:
-                    attr_value = n.attr[attr_name]
-                    if attr_value.HasField("tensor"):
-                        tensor_value = attr_value.tensor
-                        if len(tensor_value.tensor_content) > 0:
-                            tensor_dtype = attr_value.tensor.dtype
-                            tensor_shape = [x.size for x in attr_value.tensor.tensor_shape.dim]
-                            swapped_tensor_content = swap_bytes(tensor_value.tensor_content, tensor_dtype, np.prod(tensor_shape))
-                            tensor_value.tensor_content = swapped_tensor_content
-                            tc_count += 1
+    tc_count = walk_proto(saved_model_proto)
 
     logging.debug(f"{tc_count} tensor_content entries found!")
     if tc_count == 0:
@@ -92,4 +102,3 @@ if __name__ == "__main__":
         from tensorflow.core.protobuf import saved_model_pb2
 
     convert_endian(args.pb_file_name, args.rewritten_file_name)
-
